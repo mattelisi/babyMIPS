@@ -1,53 +1,64 @@
  function [data, score] = runSingleTrial(td, scr, visual, const, design)
 %
-% infinite regress #2
-%
-%
-% Matteo Lisi, 2014
-%
+
+% say td.dY is the trial-by-trial suggestion of quest plus
 
 % clear keyboard buffer
 FlushEvents('KeyDown');
 
 % predefine boundary information
-cxm = round(td.fixLoc(1));
+cxm = round(td.fixLoc(1)); % that is already in pixels
 cym = round(td.fixLoc(2));
 chk = visual.fixCkRad;
 
 % compute target path
-duration = td.duration;
+duration = td.dur;
 nFrames = round(duration/scr.fd);
-startEcc = (design.radius  - td.envDir*td.movTime*td.envSpeed/2)*visual.ppd;
-endEcc = startEcc + (td.envDir*duration*td.envSpeed/2)*visual.ppd;
-tarRad = linspace(startEcc,endEcc,nFrames);
+ecc = design.radius*visual.ppd;
+% startEcc = (design.radius  - td.envDir*td.movTime*td.envSpeed/2)*visual.ppd;
+% endEcc = startEcc + (td.envDir*duration*td.envSpeed/2)*visual.ppd;
+% tarRad = linspace(startEcc,endEcc,nFrames);
 
 % add random jitter to trajectory orientation of catch trials
-if td.internalMotion == 0
-    alphaJitter = sign(randn(1))*(design.alphaJitterRange(1) + rand(1)*(design.alphaJitterRange(2) - design.alphaJitterRange(1)));
-else
-    alphaJitter = 0;
-end
-alpha = -(rad2deg(td.alpha+pi)); % this is for drawing the texture on the screen with the correct rotation angle
-[tx, ty] = pol2cart(td.alpha, tarRad);
-[zeroX, zeroY] = pol2cart(td.alpha, visual.ppd*design.radius);
-tx = tx - zeroX;
-ty = ty - zeroY;
-
-% save the true direction of displacement
-if td.envDir==1
-  trueDir = td.alpha + alphaJitter/180*pi;
-else
-  trueDir = (td.alpha+pi) + alphaJitter/180*pi;
-end
+% if td.internalMotion == 0
+%     alphaJitter = sign(randn(1))*(design.alphaJitterRange(1) + rand(1)*(design.alphaJitterRange(2) - design.alphaJitterRange(1)));
+% else
+%     alphaJitter = 0;
+% end
+% alpha = -(rad2deg(td.alpha+pi)); % this is for drawing the texture on the screen with the correct rotation angle
+% [tx, ty] = pol2cart(td.alpha, tarRad);
+% [zeroX, zeroY] = pol2cart(td.alpha, visual.ppd*design.radius);
+% tx = tx - zeroX;
+% ty = ty - zeroY;
+% 
+% % save the true direction of displacement
+% if td.envDir==1
+%   trueDir = td.alpha + alphaJitter/180*pi;
+% else
+%   trueDir = (td.alpha+pi) + alphaJitter/180*pi;
+% end
 
 % rotate path based on alphaJitter angle
-path = [cosd(alphaJitter),-sind(alphaJitter);sind(alphaJitter),cosd(alphaJitter)]*[tx; ty];
-tx = path(1,:) + zeroX;
-ty = path(2,:) + zeroY;
+% path = [cosd(alphaJitter),-sind(alphaJitter);sind(alphaJitter),cosd(alphaJitter)]*[tx; ty];
+% tx = path(1,:) + zeroX;
+% ty = path(2,:) + zeroY;
+% 
+% tarPos = repmat([cxm cym],length(tx),1) + [tx' -ty']; % invert Y sign for screen coordinates
+% tx = tarPos(:,1);
+% ty = tarPos(:,2);
 
-tarPos = repmat([cxm cym],length(tx),1) + [tx' -ty']; % invert Y sign for screen coordinates
-tx = tarPos(:,1);
-ty = tarPos(:,2);
+% determine positions rect
+if td.dY>0 % right target
+    pos_right = [round(cxm+ecc*visual.ppd), round(cym+td.dY*visual.ppd/2)];
+    pos_left  = [round(cxm-ecc*visual.ppd), round(cym-td.dY*visual.ppd/2)];
+else
+    pos_right = [round(cxm+ecc*visual.ppd), round(cym-td.dY*visual.ppd/2)];
+    pos_left  = [round(cxm-ecc*visual.ppd), round(cym+td.dY*visual.ppd/2)];
+end
+
+% target path (rect coordinates)
+rects_right = [(pos_right -round(tsize/2)) (pos_right +round(tsize/2))];
+rects_left = [(pos_left -round(tsize/2)) (pos_left +round(tsize/2))];
 
 % compute noise pattern
 tsize = round(design.textureSize*design.sigma*visual.ppd); % texture size
@@ -63,7 +74,7 @@ if td.internalMotion == 1
     env = exp( -((gx.^2)+(gy.^2)) /(2*(td.sigma*visual.ppd)^2));
 
     % compute textures for individual frames
-    if td.driftDir == -1;
+    if td.driftDir == -1
         c = 0; tex = zeros(nFrames, 1);
         for i=1:nFrames
             aBeg = 1 + (c*step);
@@ -106,9 +117,6 @@ else
     end
 
 end
-
-% target path (rect coordinates)
-pathRects = [([tx ty] -round(tsize/2)) ([tx ty] +round(tsize/2))];
 
 % predefine time stamps
 tBeg    = NaN;

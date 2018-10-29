@@ -1,0 +1,5 @@
+todo:
+
+- add quest plus update into runTrials.m
+- staircase: the value is half the negative offset of the lower patch?
+- the internal motion needs to be set according to the side (runSingleTrial.m)
