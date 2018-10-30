@@ -98,7 +98,7 @@ for im = design.internalMotion(design.internalMotion==1)
     t = t+1;
 
     trial(t).cond = c;
-    trial(t).fixLoc = [scr.centerX, scr.centerY+ round(randn(1)*design.fixJtStd*visual.ppd)];
+    trial(t).fixLoc = [scr.centerX, (scr.centerY+round(randn(1)*design.fixJtStd*visual.ppd))];
     trial(t).soa = (design.soa(1) + rand*design.soa(2))/1000;
     trial(t).dur = design.cond_matrix(1,c);
     trial(t).speed = design.cond_matrix(2,c);
