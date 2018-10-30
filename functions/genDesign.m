@@ -1,4 +1,4 @@
-function [design, qp] = genDesign(visual,scr, practice, session, qp)
+function [design, qp] = genDesign(visual,scr, practice, session, vpcode)
 %
 % generate experiment design
 %
@@ -11,7 +11,7 @@ design.fixJtStd = 0.2;  % x-y std. if you want fixation point to vary from trial
 
 %% noise parameter
 design.spatFreq = 5; %
-design.tempFreq = [2, 8]; % it is actually speed [dva/sec]X, not temporal frequency
+design.tempFreq = [2, 10]; % it is actually speed [dva/sec]X, not temporal frequency
 
 if practice
     % 0 is catch trials; the set is repeated 2*design.rep times
@@ -28,16 +28,10 @@ design.textureSize = 8; % 8 times the sigma of the envelope, so you are sure it 
 design.nOctaves = 2;
 design.control_f = 0.5; % determine physical temporal frequency of control trials relative to double-drift
 
-%% motion par
-% design.envelDir = [1 -1]; % 1 = outward; -1 = inward
-% design.maxTime = [0.05 0.25];    % this is the duration of the stimulus
-% design.alphaJitterRange = [0 45]; % range for random (uniform) deviation from perfect radial trajectory in catch trials
-% design.movTime = design.maxTime/2; % this determine only the relative location of start position wrt mean path eccentricity (don't change it!)
-
 %% task settings
 design.side = [1, -1]; % 1 indicates right target is lower (perceptually shifted upward)
 design.duration = [0.05, 0.25];
-design.range_offset = [-3 3]; % how much higher is the right one?
+design.range_offset = [-4 4]; % how much higher is the right one?
 
 %% timing
 design.soa = [0 300];
@@ -48,10 +42,10 @@ design.adjustSoa = 0.2;       % catch stimulus takes more to compute, this appro
 %% prepare staircase structure
 %design.rep = 50;
 design.range_mu = [-3, 3];
-design.range_sigma = [0.1, 4];
-design.gridsize = 30;
-design.lambdas_val = [0, 0.01, 0.02, 0.05, 0.1];
-design.stim_n = 50;
+design.range_sigma = [0.05, 4];
+design.gridsize = 50;
+design.lambdas_val = 0; %[0, 0.01, 0.02, 0.05, 0.1];
+design.stim_n = 100;
 c = 0;
 cond_matrix = NaN(3, length(design.duration)*length(design.tempFreq)*length(design.radius));
 for dur = design.duration 
@@ -90,49 +84,36 @@ design.nBlocks = 1;
 if practice
     design.rep = 1;
 else
-    design.rep = 10;
+    design.rep = 5;
 end
 
 %% trials list
 t = 0;
+if ~practice
 for c = 1:design.n_cond
 for r = 1:round(design.rep/2)
 for side = design.side
-for im = 1 %design.internalMotion
+for im = design.internalMotion(design.internalMotion==1)
 
     t = t+1;
 
-    % trial settings
-    % trial(t).alpha = rand*2*pi; % in radians
     trial(t).cond = c;
     trial(t).fixLoc = [scr.centerX scr.centerY] + round(randn(1,2)*design.fixJtStd*visual.ppd);
     trial(t).soa = (design.soa(1) + rand*design.soa(2))/1000;
-%     if im == 0
-%         trial(t).soa = trial(t).soa + design.adjustSoa;
-%     end
-    
     trial(t).dur = design.cond_matrix(1,c);
     trial(t).speed = design.cond_matrix(2,c);
     trial(t).ecc = design.cond_matrix(3,c);
     trial(t).side = side;
-    
-%     trial(t).envDir = ed;
-%     trial(t).driftDir = sign(randn(1)); % -1 = CW; 1 = CCW (direction of internal pattern relative to envelope displacement)
-%     trial(t).internalMotion = im;
 
     % target parameters
     trial(t).spatFreq = design.spatFreq;
     trial(t).wavelength = 1/design.spatFreq * visual.ppd;
-%     trial(t).tempFreq = fp;
-%     trial(t).envSpeed = es;
     trial(t).sigma = design.sigma;
-%     trial(t).contrast = ctrst;
     trial(t).nOctaves = design.nOctaves;
-%     trial(t).duration = dur;
-%     trial(t).movTime = dur/2;
     trial(t).internalMotion = im;
     trial(t).acode = ['s',num2str(c)];
 
+end
 end
 end
 end
@@ -142,8 +123,8 @@ end
 for c = 1:design.n_cond
 for r = 1
 for side = design.side
-for im = 0
-
+for im = design.internalMotion(design.internalMotion==0)
+    
     t = t+1;
 
     trial(t).cond = 0;

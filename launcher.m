@@ -65,7 +65,7 @@ scr = prepScreen(const);
 visual = prepStim(scr, const);
 
 % generate design
-[design, qp] = genDesign(visual, scr, practice, session);
+[design, qp] = genDesign(visual, scr, practice, session, vpcode);
 
 % prepare movie
 if const.saveMovie
@@ -136,7 +136,7 @@ end
 Screen('CloseAll');
 
 % save updated design information
-save(sprintf('%s.mat',vpcode),'design','visual','scr','const');
+save(sprintf('%s.mat',vpcode),'design','visual','scr','const','qp');
 
 % sposto i risultati nella cartella corrispondente
 movefile(datFile,resdir);

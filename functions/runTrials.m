@@ -43,12 +43,17 @@ for b = 1:design.nBlocks
         td = design.b(b).trial(t);
         
         % Quest+: get recommendations for next trial ----------------------------------------------------------
-        if td.internalMotion == 1
-            eval(['[nextS, qp.',td.acode,']= QuestNext(qp.',td.acode,');']);
-            eval(['td.dY = nextS;']);
+        if td.internalMotion == 1 %&& design.practice~=0
+            if eval(['qp.',td.acode,'.count > 0'])%t~=1
+                eval(['[nextS, qp.',td.acode,']= QuestNext(qp.',td.acode,');']);
+                %eval(['td.dY = nextS;']);
+                td.dY = nextS;
+            else
+                td.dY = 1;
+            end
         else
             % set a random, easy stimulus for catch trials (uniform dY in 1:2)
-            td.dY = sign(randn(1)) * (1 + rand(1));
+            td.dY = (0.5 + rand(1));
         end
         % ------------------------------------------------------------------------------------------------------
 
@@ -57,10 +62,12 @@ for b = 1:design.nBlocks
         fprintf(datFid,dataStr);                    % write data to datFile
         
         % Quest+: update staircase structure file --------------------------------------------------------------
-        eval(['qp.',td.acode,'.count = qp.',td.acode,'.count + 1;']);
-        eval(['qp.',td.acode,'.x(qp.',td.acode,'.count) = td.dY;']);
-        eval(['qp.',td.acode,'.rr(qp.',td.acode,'.count) = rr;']);
-        eval(['qp.',td.acode,'.tab.p = p_m_uncond(nextS, qp.',td.acode,'.tab, rr);']); % update parameter posterior probability density
+        if td.internalMotion == 1 % && design.practice~=0
+            eval(['qp.',td.acode,'.count = qp.',td.acode,'.count + 1;']);
+            eval(['qp.',td.acode,'.x(qp.',td.acode,'.count) = td.dY;']);
+            eval(['qp.',td.acode,'.rr(qp.',td.acode,'.count) = rr;']);
+            eval(['qp.',td.acode,'.tab.p = p_m_uncond(td.dY, qp.',td.acode,'.tab, rr);']); % update parameter posterior probability density
+        end
         % ------------------------------------------------------------------------------------------------------
         
         % keep track of score in catch trials
