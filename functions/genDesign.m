@@ -7,7 +7,7 @@ function [design, qp] = genDesign(visual,scr, practice, session, vpcode)
 
 %% display parameters
 design.radius = [5 10]; % eccentricity ofthe stimulus
-design.fixJtStd = 0.2;  % x-y std. if you want fixation point to vary from trial to trial
+design.fixJtStd = 0.25;  % x-y std. if you want fixation point to vary from trial to trial
 
 %% noise parameter
 design.spatFreq = 5; %
@@ -98,7 +98,7 @@ for im = design.internalMotion(design.internalMotion==1)
     t = t+1;
 
     trial(t).cond = c;
-    trial(t).fixLoc = [scr.centerX scr.centerY] + round(randn(1,2)*design.fixJtStd*visual.ppd);
+    trial(t).fixLoc = [scr.centerX, scr.centerY+ round(randn(1)*design.fixJtStd*visual.ppd)];
     trial(t).soa = (design.soa(1) + rand*design.soa(2))/1000;
     trial(t).dur = design.cond_matrix(1,c);
     trial(t).speed = design.cond_matrix(2,c);

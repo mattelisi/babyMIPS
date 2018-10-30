@@ -2,7 +2,7 @@
 %
 % Probe estimated direction of peripheral MIPS (Motion Induced Position Shifts)
 % - the pattern is ~1/f noise and not a sinusoidal grating
-% - child-friendly task: only 50 trials, and allows to run a practice block with feedback
+% - child-friendly task: practice block with smiley feedback
 %
 % Matteo Lisi, 2018
 

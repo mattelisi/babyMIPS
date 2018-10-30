@@ -93,6 +93,7 @@ Screen(scr.main,'DrawText','Thanks! You have completed this part of the study.',
 drawSmiley(scr.main, [scr.centerX, scr.centerY], 120, mean(all_score), 1);
 Screen(scr.main,'DrawText','Press any key to exit.',100,scr.yres-100,visual.fgColor);
 Screen(scr.main,'Flip');
-SitNWait;
 ShowCursor;
+WaitSecs(0.5);
+SitNWait;
 
