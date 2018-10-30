@@ -9,7 +9,7 @@ end
 
 % compute expected entropies
 for x_i = 1:qp.x_n
-    qp.x_EH(x_i) = H_x(qp.x_values(x_i),qp);
+    qp.x_EH(x_i) = H_x(qp.x_values(x_i),qp.tab);
 end
 
 % select stimulus with minimum entropy
@@ -17,7 +17,6 @@ x_next = qp.x_values(qp.x_EH==min(qp.x_EH));
 
 % once I obtained 2 stimuli with the same expected entropy
 % should not happen, but in case pick a random one to avoid errors
-% pick a random one
 if length(x_next)>1
     x_next = x_next(randperm(length(x_next),1));
 end
@@ -34,4 +33,3 @@ if x_next==qp.x_range(1) || x_next==qp.x_range(2)
         x_next = compute_sweetpoint(mu_hat, sigma_hat, lambda_hat);
     end
 end
-

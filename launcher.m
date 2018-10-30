@@ -13,7 +13,7 @@ home;
 
 %% general parameters
 const.gammaLinear = 0; % use monitor linearization (need also to set the path below)
-const.saveMovie   = 1; % untested for the moment
+const.saveMovie   = 0; % untested for the moment
 const.nTrialMovie = 5;
 
 % gamma calibration data folders path
@@ -65,7 +65,7 @@ scr = prepScreen(const);
 visual = prepStim(scr, const);
 
 % generate design
-design = genDesign(visual, scr, practice);
+[design, qp] = genDesign(visual, scr, practice, session);
 
 % prepare movie
 if const.saveMovie
@@ -83,13 +83,6 @@ Screen('Flip', scr.main);
 SitNWait;
 Screen('Close',istru1);
 
-if more than one "page" is needed, you can just add it as follow:
-istruImage2 = imread('instructions_2.png');
-istru2 = Screen('MakeTexture', scr.main, istruImage2);
-Screen('DrawTexture', scr.main, istru2, [], [], 0);
-Screen('Flip', scr.main);
-SitNWait;
-Screen('Close',istru2);
 % 
 % if practice
 % istruImage1 = imread('instructions/instruction1.png');
@@ -130,7 +123,7 @@ Screen('Close',istru2);
 
 try
     % runtrials
-    design = runTrials(design,vpcode,scr,visual,const);
+    [design, qp]  = runTrials(design,vpcode,scr,visual,const, qp);
 catch ME
     rethrow(ME);
 end

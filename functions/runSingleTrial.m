@@ -1,10 +1,13 @@
- function [data, score] = runSingleTrial(td, scr, visual, const, design)
+ function [data, rr, acc] = runSingleTrial(td, scr, visual, const, design)
 %
-
 % say td.dY is the trial-by-trial suggestion of quest plus
 
 % clear keyboard buffer
 FlushEvents('KeyDown');
+
+% define response keys
+leftkey = KbName('LeftArrow');
+rightkey = KbName('RightArrow');
 
 % predefine boundary information
 cxm = round(td.fixLoc(1)); % that is already in pixels
@@ -14,7 +17,7 @@ chk = visual.fixCkRad;
 % compute target path
 duration = td.dur;
 nFrames = round(duration/scr.fd);
-ecc = design.radius*visual.ppd;
+% ecc = td.ecc;
 % startEcc = (design.radius  - td.envDir*td.movTime*td.envSpeed/2)*visual.ppd;
 % endEcc = startEcc + (td.envDir*duration*td.envSpeed/2)*visual.ppd;
 % tarRad = linspace(startEcc,endEcc,nFrames);
@@ -49,32 +52,33 @@ ecc = design.radius*visual.ppd;
 
 % determine positions rect
 if td.dY>0 % right target
-    pos_right = [round(cxm+ecc*visual.ppd), round(cym+td.dY*visual.ppd/2)];
-    pos_left  = [round(cxm-ecc*visual.ppd), round(cym-td.dY*visual.ppd/2)];
+    pos_right = [round(cxm+td.ecc*visual.ppd), round(cym+td.dY*visual.ppd/2)];
+    pos_left  = [round(cxm-td.ecc*visual.ppd), round(cym-td.dY*visual.ppd/2)];
+    % need to set here also the alpha of the texture, accordingly
+    alpha_right = 90;
+    alpha_left = -90;
 else
-    pos_right = [round(cxm+ecc*visual.ppd), round(cym-td.dY*visual.ppd/2)];
-    pos_left  = [round(cxm-ecc*visual.ppd), round(cym+td.dY*visual.ppd/2)];
+    pos_right = [round(cxm+td.ecc*visual.ppd), round(cym-td.dY*visual.ppd/2)];
+    pos_left  = [round(cxm-td.ecc*visual.ppd), round(cym+td.dY*visual.ppd/2)];
+    alpha_right = -90;
+    alpha_left =   90;
 end
 
 % target path (rect coordinates)
+tsize = round(design.textureSize*design.sigma*visual.ppd); % texture size
 rects_right = [(pos_right -round(tsize/2)) (pos_right +round(tsize/2))];
 rects_left = [(pos_left -round(tsize/2)) (pos_left +round(tsize/2))];
 
 % compute noise pattern
-tsize = round(design.textureSize*design.sigma*visual.ppd); % texture size
 if mod(tsize,2)==0; tsize = tsize+1; end
 
 if td.internalMotion == 1
-
-    step = round(visual.ppd*(td.tempFreq*scr.fd));
+    step = round(visual.ppd*(td.speed*scr.fd));
     noiseimg = (255*fractionalNoise(zeros(ceil(tsize*2+step*nFrames), tsize), td.wavelength, td.nOctaves)) -visual.bgColor;
-
-    % gaussian envelope
-    [gx,gy]=meshgrid(-floor(tsize/2):floor(tsize/2), -floor(tsize/2):floor(tsize/2));
+    [gx,gy]=meshgrid(-floor(tsize/2):floor(tsize/2), -floor(tsize/2):floor(tsize/2)); % gaussian envelope
     env = exp( -((gx.^2)+(gy.^2)) /(2*(td.sigma*visual.ppd)^2));
-
     % compute textures for individual frames
-    if td.driftDir == -1
+    %if td.driftDir == -1
         c = 0; tex = zeros(nFrames, 1);
         for i=1:nFrames
             aBeg = 1 + (c*step);
@@ -82,40 +86,31 @@ if td.internalMotion == 1
             c = c+1;
             noisePatt = noiseimg(aBeg:aEnd,:);
             m = (noisePatt).*env;
-            tex(i)=Screen('MakeTexture', scr.main, uint8(visual.bgColor + td.contrast*m));
+            tex(i)=Screen('MakeTexture', scr.main, uint8(visual.bgColor + design.contrast*m));
         end
-    else
-        c = 0; tex = zeros(nFrames, 1);
-        for i=nFrames:-1:1
-            aBeg = 1 + (c*step);
-            aEnd = tsize + (c*step);
-            c = c+1;
-            noisePatt = noiseimg(aBeg:aEnd,:);
-            m = (noisePatt).*env;
-            tex(i)=Screen('MakeTexture', scr.main, uint8(visual.bgColor + td.contrast*m));
-        end
-    end
-
+%     else
+%         c = 0; tex = zeros(nFrames, 1);
+%         for i=nFrames:-1:1
+%             aBeg = 1 + (c*step);
+%             aEnd = tsize + (c*step);
+%             c = c+1;
+%             noisePatt = noiseimg(aBeg:aEnd,:);
+%             m = (noisePatt).*env;
+%             tex(i)=Screen('MakeTexture', scr.main, uint8(visual.bgColor + td.contrast*m));
+%         end
+%     end
     WaitSecs(0.6);
-
 else
-
-    step = visual.ppd*(td.tempFreq*scr.fd) * design.control_f;
-
+    step = visual.ppd*(td.speed*scr.fd) * design.control_f;
     noiseimg = (255*fractionalNoise3(zeros(tsize, tsize, nFrames+10), td.wavelength, td.nOctaves, step)) -visual.bgColor;
-
-    % gaussian envelope
-    [gx,gy]=meshgrid(-floor(tsize/2):floor(tsize/2), -floor(tsize/2):floor(tsize/2));
+    [gx,gy]=meshgrid(-floor(tsize/2):floor(tsize/2), -floor(tsize/2):floor(tsize/2)); % gaussian envelope
     env = exp( -((gx.^2)+(gy.^2)) /(2*(td.sigma*visual.ppd)^2));
-
     tex = zeros(nFrames, 1);
     for i=1:nFrames
         noisePatt = noiseimg(:,:,i);
         m = (noisePatt).*env;
-        tex(i)=Screen('MakeTexture', scr.main, uint8(visual.bgColor + td.contrast*m));
-
+        tex(i)=Screen('MakeTexture', scr.main, uint8(visual.bgColor + design.contrast*m));
     end
-
 end
 
 % predefine time stamps
@@ -142,7 +137,8 @@ WaitSecs(td.soa - 2*design.preRelease);
 for i = 1:nFrames
 
     % draw stimuli
-    Screen('DrawTexture', scr.main, tex(i),[],pathRects(i,:),alpha);
+    Screen('DrawTexture', scr.main, tex(i),[],rects_right,alpha_right);
+    Screen('DrawTexture', scr.main, tex(i),[],rects_left,alpha_left);
     drawFixation(visual.fixCol,td.fixLoc,scr,visual);
 
     % drawing finished, flip canvas
@@ -163,50 +159,68 @@ if const.saveMovie
     Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, round(0.3/scr.fd));
 end
 
-%% collect perceptual response
-WaitSecs(0.3); % delay stimulus offset - response
+% %% collect perceptual response
+% WaitSecs(0.3); % delay stimulus offset - response
+% 
+% point = rand*2*pi; % set random initial position
+% 
+% [mx ,my] = pol2cart(point,1);
+% [px ,py] = pol2cart(point,60);
+% drawArrow([tx(1) ty(1)],[px+tx(1) ,-py+ty(1)],20,scr,visual.fgColor,3);
+% SetMouse(round(scr.centerX+visual.ppd*mx), round(scr.centerY-visual.ppd*my), scr.main); % set mouse
+% %HideCursor;
+% 
+% tHClk = Screen('Flip',scr.main);
+% if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, 10); end
+% click = false;
+% while ~click
+%     [mx,my,buttons] = GetMouse(scr.main);
+%     [lastPoint,~] = cart2pol(mx-scr.centerX, scr.centerY-my);
+%     [px ,py] = pol2cart(lastPoint,70);
+%     drawArrow([tx(1) ty(1)],[px+tx(1) ,-py+ty(1)],20,scr,visual.fgColor,3);
+%     Screen('Flip',scr.main);
+%     if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, 2); end
+%     if any(buttons)
+%         tResp = GetSecs;
+%         click = true;
+%         resp = lastPoint;
+%     end
+% end
+% Screen('Flip',scr.main);
+% if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, 2); end
 
-point = rand*2*pi; % set random initial position
-
-[mx ,my] = pol2cart(point,1);
-[px ,py] = pol2cart(point,60);
-drawArrow([tx(1) ty(1)],[px+tx(1) ,-py+ty(1)],20,scr,visual.fgColor,3);
-SetMouse(round(scr.centerX+visual.ppd*mx), round(scr.centerY-visual.ppd*my), scr.main); % set mouse
-%HideCursor;
-
-tHClk = Screen('Flip',scr.main);
-if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, 10); end
-click = false;
-while ~click
-    [mx,my,buttons] = GetMouse(scr.main);
-    [lastPoint,~] = cart2pol(mx-scr.centerX, scr.centerY-my);
-    [px ,py] = pol2cart(lastPoint,70);
-    drawArrow([tx(1) ty(1)],[px+tx(1) ,-py+ty(1)],20,scr,visual.fgColor,3);
-    Screen('Flip',scr.main);
-    if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, 2); end
-    if any(buttons)
-        tResp = GetSecs;
-        click = true;
-        resp = lastPoint;
+% trial OK; collect response
+while 1
+    [keyisdown, secs, keycode] = KbCheck(-1);
+    
+    if keyisdown && (keycode(leftkey) || keycode(rightkey))
+        tResp = secs - tOff;
+        
+        if keycode(leftkey)
+            resp = -1;
+            rr = 0;
+        else
+            resp = 1;
+            rr = 1;
+        end
+        break;
     end
 end
-Screen('Flip',scr.main);
-if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, 2); end
 
-tResp = GetSecs;
-
-%% signed error: you can take the absolute value of this, divided by pi, as a measure of accuracy bounded in (0,1)
-signed_error = atan2(sin(resp-trueDir), cos(resp-trueDir));
-score = abs(signed_error/pi);
+% determine accuracy
+if td.internalMotion == 0
+    if (td.dY<0 && rr==1) || (td.dY>0 && rr==0)
+        acc = 1;
+    else
+        acc=0;
+    end
+else
+    acc = NaN;
+end
 
 %% give feedback if practice session
-if design.practice
-  drawArrow([tx(1) ty(1)],[px+tx(1) ,-py+ty(1)],20,scr,visual.fgColor,3);
-  [Tpx ,Tpy] = pol2cart(trueDir,70);
-  drawArrow([tx(1) ty(1)],[Tpx+tx(1) ,-Tpy+ty(1)],20,scr,[50 255 50],3);
-
-  drawSmiley(scr.main, [cxm, cym], 60, 1-score, 1)
-
+if design.practice && td.internalMotion
+  drawSmiley(scr.main, [cxm, cym], 60, acc, 1)
   Screen('Flip',scr.main);
   WaitSecs(0.2);
   SitNWait;
@@ -217,13 +231,13 @@ end
 if const.saveMovie; Screen('AddFrameToMovie', scr.main, visual.imageRect, 'frontBuffer', const.moviePtr, round(1/scr.fd)); end
 
 % collect trial information
-trialData = sprintf('%.2f\t%i\t%i\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f',[td.alpha td.fixLoc td.soa td.envDir td.driftDir td.movTime td.contrast td.wavelength td.tempFreq td.envSpeed td.sigma td.internalMotion alphaJitter duration]); % stim delay placed instead of td.contrast
+trialData = sprintf('%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f',[td.fixLoc td.soa td.internalMotion td.duration td.contrast td.wavelength td.speed td.sigma td.ecc]); 
 
 % determine presentation times relative to 1st frame of motion
-timeData = sprintf('%.2f\t%i\t%i\t%i\t%i',[tBeg round(1000*([tFix tEnd tHClk tResp]-tBeg ))]);
+timeData = sprintf('%.2f\t%i\t%i\t%i',[tBeg round(1000*([tFix tEnd tResp]-tBeg ))]);
 
 % determine response data
-respData = sprintf('%.2f\t%.2f\t%.2f',resp, trueDir, signed_error);
+respData = sprintf('%i\t%i\t%i',resp, rr, acc);
 
 % collect data for tab [14 x trialData, 6 x timeData, 1 x respData]
 data = sprintf('%s\t%s\t%s',trialData, timeData, respData);

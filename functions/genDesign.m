@@ -1,4 +1,4 @@
-function design = genDesign(visual,scr, practice)
+function [design, qp] = genDesign(visual,scr, practice, session, qp)
 %
 % generate experiment design
 %
@@ -24,7 +24,7 @@ design.practice = practice;
 %design.envSpeed = 0; % deg/sec
 design.sigma = 0.35;
 design.contrast = 1;    % keep 1
-design.textureSize = 6; % 8 times the sigma of the envelope, so you are sure it is not clipped at edges
+design.textureSize = 8; % 8 times the sigma of the envelope, so you are sure it is not clipped at edges
 design.nOctaves = 2;
 design.control_f = 0.5; % determine physical temporal frequency of control trials relative to double-drift
 
@@ -36,7 +36,7 @@ design.control_f = 0.5; % determine physical temporal frequency of control trial
 
 %% task settings
 design.side = [1, -1]; % 1 indicates right target is lower (perceptually shifted upward)
-design.duration = [0.05, 025];
+design.duration = [0.05, 0.25];
 design.range_offset = [-3 3]; % how much higher is the right one?
 
 %% timing
@@ -76,7 +76,7 @@ for ecc = design.radius
     eval(['qp.s',num2str(c),'.x_EH = NaN(1,design.stim_n);']);
     
     % if not the first session, load posterior probability from previous one
-    if sess > 1
+    if session > 1
         eval(['qp.s',num2str(c),'.tab.p = readPtab(vpcode, c);']);
     end
 end
@@ -121,8 +121,8 @@ for im = 1 %design.internalMotion
 %     trial(t).internalMotion = im;
 
     % target parameters
-    trial(t).spatFreq = sf;
-    trial(t).wavelength = 1/sf * visual.ppd;
+    trial(t).spatFreq = design.spatFreq;
+    trial(t).wavelength = 1/design.spatFreq * visual.ppd;
 %     trial(t).tempFreq = fp;
 %     trial(t).envSpeed = es;
     trial(t).sigma = design.sigma;
@@ -130,6 +130,8 @@ for im = 1 %design.internalMotion
     trial(t).nOctaves = design.nOctaves;
 %     trial(t).duration = dur;
 %     trial(t).movTime = dur/2;
+    trial(t).internalMotion = im;
+    trial(t).acode = ['s',num2str(c)];
 
 end
 end
@@ -151,10 +153,12 @@ for im = 0
     trial(t).speed = design.cond_matrix(2,c);
     trial(t).ecc = design.cond_matrix(3,c);
     trial(t).side = side;
-    trial(t).spatFreq = sf;
-    trial(t).wavelength = 1/sf * visual.ppd;
+    trial(t).spatFreq = design.spatFreq;
+    trial(t).wavelength = 1/design.spatFreq * visual.ppd;
     trial(t).sigma = design.sigma;
     trial(t).nOctaves = design.nOctaves;
+    trial(t).internalMotion = im;
+    trial(t).acode = 'catch';
 
 end
 end

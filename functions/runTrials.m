@@ -1,4 +1,4 @@
-function design = runTrials(design, datFile,  scr, visual, const)
+function [design, qp] = runTrials(design, datFile,  scr, visual, const, qp)
 % run experimental blocks
 
 % hide cursor
@@ -41,16 +41,31 @@ for b = 1:design.nBlocks
     while t < ntt
         t = t + 1;
         td = design.b(b).trial(t);
+        
+        % Quest+: get recommendations for next trial ----------------------------------------------------------
+        if td.internalMotion == 1
+            eval(['[nextS, qp.',td.acode,']= QuestNext(qp.',td.acode,');']);
+            eval(['td.dY = nextS;']);
+        else
+            % set a random, easy stimulus for catch trials (uniform dY in 1:2)
+            td.dY = sign(randn(1)) * (1 + rand(1));
+        end
+        % ------------------------------------------------------------------------------------------------------
 
-        [data, score] = runSingleTrial(td, scr, visual, const, design);
-
+        [data, rr, acc] = runSingleTrial(td, scr, visual, const, design);
         dataStr = sprintf('%i\t%i\t%s\n',b,t,data); % print data to string
-
         fprintf(datFid,dataStr);                    % write data to datFile
+        
+        % Quest+: update staircase structure file --------------------------------------------------------------
+        eval(['qp.',td.acode,'.count = qp.',td.acode,'.count + 1;']);
+        eval(['qp.',td.acode,'.x(qp.',td.acode,'.count) = td.dY;']);
+        eval(['qp.',td.acode,'.rr(qp.',td.acode,'.count) = rr;']);
+        eval(['qp.',td.acode,'.tab.p = p_m_uncond(nextS, qp.',td.acode,'.tab, rr);']); % update parameter posterior probability density
+        % ------------------------------------------------------------------------------------------------------
         
         % keep track of score in catch trials
         if td.internalMotion==0
-            all_score = [all_score, score];
+            all_score = [all_score, acc];
         end
 
         WaitSecs(design.iti);
@@ -67,14 +82,10 @@ end
 fclose(datFid); % close datFile
 
 Screen('FillRect', scr.main,visual.bgColor);
-Screen(scr.main,'DrawText','Thanks, you have completed this part of the study.',100,100,visual.fgColor);
-
-drawSmiley(scr.main, [scr.centerX, scr.centerY], 120, 1-mean(all_score), 1);
-
+Screen(scr.main,'DrawText','Thanks! You have completed this part of the study.',100,100,visual.fgColor);
+drawSmiley(scr.main, [scr.centerX, scr.centerY], 120, mean(all_score), 1);
 Screen(scr.main,'DrawText','Press any key to exit.',100,scr.yres-100,visual.fgColor);
-
 Screen(scr.main,'Flip');
 SitNWait;
-
 ShowCursor;
 
