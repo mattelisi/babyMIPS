@@ -4,6 +4,9 @@ function [design, qp] = genDesign(visual,scr, practice, session, vpcode)
 %
 % Matteo Lisi, 2014
 %
+% babyMIPS: the part building the trial list is a bit clumsy, but it gives the 
+% correct proportion of trials for each condition, and build a staircase structure
+% with a code for each condition
 
 %% display parameters
 design.radius = [5 10]; % eccentricity ofthe stimulus
@@ -43,6 +46,7 @@ design.adjustSoa = 0.2;       % catch stimulus takes more to compute, this appro
 % note on the staircase structure: the field tab.p contain the posterior probability
 % density: x coordinates are the log(sigma), y coordinates the bias, and z coordinates
 % (if present) are the different lapse rates
+%
 design.range_mu = [-2, 2];
 design.range_sigma = [0.001, 4];
 design.gridsize = 50;
