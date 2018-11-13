@@ -11,7 +11,7 @@ p_table.p = p;
 
 % specificy all the possible values of the parameters
 p_table.mu_i = linspace(R_mu(1),R_mu(2),gridsize);
-p_table.sigma_i = linspace(R_sigma(1),R_sigma(2),gridsize);
+p_table.sigma_i = linspace(log(R_sigma(1)),log(R_sigma(2)),gridsize);
 p_table.lambda_i = lambdas;
 p_table.gridsize = gridsize;
 

@@ -5,6 +5,9 @@
 % - child-friendly task: practice block with smiley feedback
 %
 % Matteo Lisi, 2018
+%
+% note to self: quest+ here is parametrized with the log-sigma for numerical stability
+%
 
 clear all;  clear mex;  clear functions;
 addpath('functions/');

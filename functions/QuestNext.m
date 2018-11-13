@@ -27,9 +27,14 @@ end
 % the stimulus there
 if x_next==qp.x_range(1) || x_next==qp.x_range(2)
     if ~limitbehav
-        x_next = sign(randn) * abs(x_next);
+        % x_next = sign(randn) * abs(x_next);
+        if randn(1)>0
+            x_next = qp.x_range(1);
+        else
+            x_next = qp.x_range(2);
+        end
     else
-        [mu_hat, sigma_hat, lambda_hat] = fit_p_r(qp.x, qp.rr);
-        x_next = compute_sweetpoint(mu_hat, sigma_hat, lambda_hat);
+        [mu_hat, logsigma_hat, lambda_hat] = fit_p_r(qp.x, qp.rr);
+        x_next = compute_sweetpoint(mu_hat, logsigma_hat, lambda_hat);
     end
 end

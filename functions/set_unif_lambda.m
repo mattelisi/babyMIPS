@@ -7,7 +7,7 @@ function p_table = set_unif_lambda(R_mu, R_sigma, gridsize, lambdas)
 p = zeros(gridsize, gridsize, length(lambdas)) + 1/(length(lambdas)*gridsize^2);
 p_table.p = p;
 p_table.mu_i = linspace(R_mu(1),R_mu(2),gridsize);
-p_table.sigma_i = linspace(R_sigma(1),R_sigma(2),gridsize);
+p_table.sigma_i = linspace(log(R_sigma(1)),log(R_sigma(2)),gridsize);
 p_table.lambda_i = lambdas;
 p_table.gridsize = gridsize;
 

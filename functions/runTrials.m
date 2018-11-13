@@ -43,10 +43,9 @@ for b = 1:design.nBlocks
         td = design.b(b).trial(t);
         
         % Quest+: get recommendations for next trial ----------------------------------------------------------
-        if td.internalMotion == 1 %&& design.practice~=0
-            if eval(['qp.',td.acode,'.count > 0'])%t~=1
+        if td.cond~=0 % td.internalMotion == 1 && design.practice~=0 && 
+            if eval(['qp.',td.acode,'.count > 0'])
                 eval(['[nextS, qp.',td.acode,']= QuestNext(qp.',td.acode,');']);
-                %eval(['td.dY = nextS;']);
                 td.dY = nextS;
             else
                 td.dY = 1;
@@ -62,7 +61,7 @@ for b = 1:design.nBlocks
         fprintf(datFid,dataStr);                    % write data to datFile
         
         % Quest+: update staircase structure file --------------------------------------------------------------
-        if td.internalMotion == 1 % && design.practice~=0
+        if td.cond~=0 % td.internalMotion == 1 % && design.practice~=0
             eval(['qp.',td.acode,'.count = qp.',td.acode,'.count + 1;']);
             eval(['qp.',td.acode,'.x(qp.',td.acode,'.count) = td.dY;']);
             eval(['qp.',td.acode,'.rr(qp.',td.acode,'.count) = rr;']);

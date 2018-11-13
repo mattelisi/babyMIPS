@@ -1,4 +1,4 @@
-function s = compute_sweetpoint(mu, sigma, lambda, side)
+function s = compute_sweetpoint(mu, logsigma, lambda, side)
 %
 % compute sweetpoint for slope estimation of a given function
 %
@@ -16,10 +16,10 @@ end
 options = optimset('Display', 'off') ;
 
 % set boundaries & initial parameters
-if sigma*4 < 1
+if exp(logsigma)*4 < 1
     bdwidth = 1; % avoid numerical issues when range is too small
 else
-    bdwidth = sigma*4;
+    bdwidth = exp(logsigma)*4;
 end
 
 % adjust boundaries depending on which sweetpoint is estimated
@@ -34,7 +34,7 @@ else
 end
 
 % do optimization
-fun = @(x) Evar_sigma(x, mu, sigma, lambda);
+fun = @(x) Evar_sigma(x, mu, logsigma, lambda);
 s = fmincon(fun, x0, [],[],[],[], lb, ub,[],options);
 
 
